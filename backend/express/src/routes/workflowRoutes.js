@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const createOrUpdateWorkflow = require("../controllers/workflowController");
+const createWorkflow = require("../controllers/workflowController");
 
-router.post("/", createOrUpdateWorkflow);
+router.post("/", createWorkflow);
 
 module.exports = router;

@@ -2,7 +2,7 @@ const Workflow = require("../models/workflow-model");
 const WorkflowVersion = require("../models/workflowVersion-model");
 
 // 1. Create/Update a Workflow (The "Save" Button)
-const createOrUpdateWorkflow = async (req, res) => {
+const createWorkflow = async (req, res) => {
   try {
     const { name, owner_id, triggerSlug, nodes, edges } = req.body;
 
@@ -41,4 +41,4 @@ const createOrUpdateWorkflow = async (req, res) => {
   }
 };
 
-module.exports = createOrUpdateWorkflow;
+module.exports = createWorkflow;
