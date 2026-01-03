@@ -53,7 +53,7 @@ export const Workflows = () => {
             className="flex items-center gap-1.5 px-4 py-2 bg-[#ff4f00] hover:bg-[#e64600] text-white text-xs font-bold rounded-full transition-all shadow-sm hover:scale-105 hover:shadow-md"
           >
             <Plus className="w-3.5 h-3.5" />
-            Create Zap
+            Create Workflow
           </button>
         </div>
 
