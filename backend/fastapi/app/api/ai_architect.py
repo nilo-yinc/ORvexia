@@ -4,7 +4,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from app.core.config import settings
 from app.schemas.ai_schemas import ChatRequest,WorkflowDefinition
-from app.templates.prompt import AVAILABLE_TOOLS,systemprompt
+from app.templates.prompt import WORKFLOW_SYSTEM_PROMPT,get_tools_string
 
 router=APIRouter()
 
@@ -21,16 +21,20 @@ async def generate_workflow_structure (request: ChatRequest):
         )
         structured_llm=llm.with_structured_output(WorkflowDefinition)
 
-        final_system_message=systemprompt.format(tools_list=AVAILABLE_TOOLS)
+        tools_str=get_tools_string()
+        
+        final_system_message=WORKFLOW_SYSTEM_PROMPT.format(tools_list=tools_str)
         prompt=ChatPromptTemplate.from_messages(
             [
-                ("system",final_system_message),
+                ("system",WORKFLOW_SYSTEM_PROMPT),
                 ("human","{input}")
             ]
         )
 
         chain=prompt|structured_llm
-        result=await chain.ainvoke({"input":request.message})
+        result=await chain.ainvoke({
+            "input":request.message,
+            "tools_list":tools_str})
 
         return result.dict()
     except Exception as e:
