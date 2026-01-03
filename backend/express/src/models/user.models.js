@@ -24,11 +24,6 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
-    verificationToken: String,
     verificationTokenExpiry: Date,
     resetPasswordToken: String,
     resetPasswordTokenExpiry: Date,
@@ -36,27 +31,22 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-//use pre-save hook middleware to hash the password before saving the user in DB
-// userSchema.pre("save", async function (next) {
-//   if (!this.isModified("password")) {
-//     next();
-//   } else {
-//     this.password = await bcrypt.hash(this.password, 10);
-//     next();
-//   }
-// });
-
+// Hash password before saving
 userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
-
+  // If password is not modified, just return (promise resolves automatically)
+  if (!this.isModified("password")) {
+    return;
+  }
+  
+  // Hash the password
   this.password = await bcrypt.hash(this.password, 10);
 });
 
-
-// compare password
+// Compare password method
 userSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
+
 const User = mongoose.model("User", userSchema);
 
 module.exports = User;

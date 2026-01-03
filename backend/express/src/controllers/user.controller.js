@@ -1,5 +1,4 @@
 const User = require("../models/user.models");
-const crypto = require("crypto");
 // const { sendVerificationEmail } = require("../utils/sendingMail.utils");
 const jwt = require("jsonwebtoken");
 
@@ -37,7 +36,6 @@ const registerUser = async (req, res) => {
     // 4. hashing of password is done in the User model using pre-save hook middleware
 
     // 5. generate a verification token and expiry time
-    const token = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpiry = Date.now() + 10 * 60 * 1000;
 
     // 6. now create a new user
@@ -45,7 +43,6 @@ const registerUser = async (req, res) => {
       name,
       email,
       password,
-      verificationToken: token,
       verificationTokenExpiry: verificationTokenExpiry,
     });
 
@@ -56,6 +53,7 @@ const registerUser = async (req, res) => {
         message: "User registration failed",
       });
     }
+    
 
     // 7. verify the user email address by sending a token to the user's email address
     // await sendVerificationEmail(user.email, user.verificationToken);
@@ -68,7 +66,6 @@ const registerUser = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        isVerified: user.isVerified,
       },
     });
   } catch (error) {
@@ -151,14 +148,6 @@ const login = async (req, res) => {
       });
     }
 
-    // 5. Check if user is verified
-    // if (!user.isVerified) {
-    //   return res.status(400).json({
-    //     status: false,
-    //     message: "Please verify your email address",
-    //   });
-    // }
-
     // 6. compare the password
     const isPasswordMatch = await user.comparePassword(password);
 
@@ -192,11 +181,11 @@ const login = async (req, res) => {
     console.error("User login failed", error);
     return res.status(500).json({
       status: false,
-      message: "User login failed",
+      message: error.message,  // Show actual error message
+      stack: error.stack        // Show stack trace
     });
   }
 };
-
 // get user profile controller
 const getProfile = async (req, res) => {
   try {

@@ -1,5 +1,6 @@
 const express = require("express");
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, '../../.env') });
 require("./config/mongoose-connection");
 const userRoutes = require("./routes/user.routes");
 const cors = require("cors");
