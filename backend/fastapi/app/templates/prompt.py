@@ -42,16 +42,52 @@ TOOLS_DB = [
         "url": "http://localhost:8000/github/create"
     },
     {
-        "id": "EMAIL_SENDER",
-        "description": "Sends an email. Requires 'recipient' and 'subject'.",
-        "type": "service_task",
-        "url": "http://localhost:8000/email/send"
-    },
-    {
         "id": "INVENTORY_CHECK",
         "description": "Checks stock levels. Requires 'item_id'.",
         "type": "service_task",
         "url": "http://localhost:8000/inventory/check"
+    },
+    {
+        "id": "LLM_CONTENT_GENERATOR",
+        "description": "Generates Text using AI. Useful for writing professional emails, summarizing data, or fixing codes. Requires 'prompt' (e.g.'Write a proper apology email')",
+        "type": "service_task",
+        "url": "http://localhost:8000/ai/generate-content"
+    },
+    {
+        "id": "GMAIL_SENDER",
+        "description": "Sends an email immediately. Set 'action' to 'send'. Requires 'recipient', 'subject', 'body'.",
+        "type": "service_task",
+        "url": "http://localhost:8000/gmail/execute"  # <--- SAME URL
+    },
+    {
+        "id": "GMAIL_DRAFT_CREATOR",
+        "description": "Creates a draft email. Set 'action' to 'create_draft'. Requires 'recipient', 'subject', 'body'.",
+        "type": "service_task",
+        "url": "http://localhost:8000/gmail/execute"  
+    },
+    {
+        "id": "GMAIL_FETCHER",
+        "description": "Reads the latest email. Set 'action' to 'read_latest'. No other inputs needed.",
+        "type": "service_task",
+        "url": "http://localhost:8000/gmail/execute"  
+    },
+    {
+        "id": "NOTION_ITEM_CREATOR",
+        "description": "Adds a new item/row to a Notion Database. Useful for task tracking or logging. Set 'action' to 'create_item'. Requires 'database_name' (e.g., 'Tasks') and 'content' (the text to add).",
+        "type": "service_task",
+        "url": "http://localhost:8000/notion/execute"
+    },
+    {
+        "id": "NOTION_PAGE_READER",
+        "description": "Reads the content of a Notion page. Useful for summarizing docs. Set 'action' to 'read_page'. Requires 'page_title'.",
+        "type": "service_task",
+        "url": "http://localhost:8000/notion/execute"
+    },
+    {
+        "id": "SLACK_SENDER",
+        "description": "Sends a message to a Slack channel or user. Set 'action' to 'send_message'. Requires 'channel_name' (e.g., '#general') and 'message_text'.",
+        "type": "service_task",
+        "url": "http://localhost:8000/slack/execute"
     }
 ]
 
