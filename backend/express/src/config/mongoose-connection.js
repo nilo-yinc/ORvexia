@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/workflow_management';
+const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://niloy:Niloy%402004@hacknitr.f87q2ts.mongodb.net/orvexia?appName=HackNITR';
 
 mongoose.connect(mongoUri)
   .then(() => {

@@ -1,7 +1,7 @@
-import User from "../models/user.models.js";
-import crypto from "crypto";
-import { sendVerificationEmail } from "../utils/sendingMail.utils.js";
-import jwt from "jsonwebtoken";
+const User = require("../models/user.models");
+const crypto = require("crypto");
+// const { sendVerificationEmail } = require("../utils/sendingMail.utils");
+const jwt = require("jsonwebtoken");
 
 // Register user controller
 const registerUser = async (req, res) => {
@@ -58,12 +58,12 @@ const registerUser = async (req, res) => {
     }
 
     // 7. verify the user email address by sending a token to the user's email address
-    await sendVerificationEmail(user.email, user.verificationToken);
+    // await sendVerificationEmail(user.email, user.verificationToken);
 
     // 8. send response
     return res.status(201).json({
       status: true,
-      message: "User registered successfully, please verify your email address",
+      message: "User registered successfully",
       user: {
         id: user._id,
         name: user.name,
@@ -75,50 +75,56 @@ const registerUser = async (req, res) => {
     console.error("User registration failed", error);
     return res.status(500).json({
       status: false,
-      message: "User registration failed",
+      message: error.message // "User registration failed",
+      
     });
   }
 };
 
-// Verify user email address controller
-const verify = async (req, res) => {
-  try {
-    // 1. get verification token from request params means from URL
-    const token = req.params.token;
+// // Verify user email address controller
+// const verify = async (req, res) => {
+//   try {
+//     // 1. get verification token from request params means from URL
+//     const token = req.params.token;
 
-    // 2. find the user with the verification token in DB
-    const user = await User.findOne({
-      verificationToken: token,
-      verificationTokenExpiry: { $gt: Date.now() },
-    });
+    
 
-    // 3. check if user exists
-    if (!user) {
-      return res.status(400).json({
-        status: false,
-        message: "Invalid or expired verification token",
-      });
-    }
+//     // 2. find the user with the verification token in DB
+//     const user = await User.findOne({
+//       verificationToken: token,
+//       verificationTokenExpiry: { $gt: Date.now() },
+//     });
 
-    // 4. update user isVerified status and remove verification token
-    user.isVerified = true;
-    user.verificationToken = undefined;
-    user.verificationTokenExpiry = undefined;
-    await user.save();
+//     // 3. check if user exists
+//     if (!user) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Invalid or expired verification token",
+//       });
+//     }
 
-    // 5. send response
-    return res.status(200).json({
-      status: true,
-      message: "Email verified successfully",
-    });
-  } catch (error) {
-    console.error("Email verification failed", error);
-    return res.status(500).json({
-      status: false,
-      message: "Email verification failed",
-    });
-  }
-};
+//     // 4. update user isVerified status and remove verification token
+//     user.isVerified = true;
+//     user.verificationToken = undefined;
+//     user.verificationTokenExpiry = undefined;
+//     await user.save();
+
+//     // 5. send response
+//     return res.status(200).json({
+//       status: true,
+//       message: "Email verified successfully",
+//     });
+//   } catch (error) {
+//     console.error("Email verification failed", error);
+//     return res.status(500).json({
+//       status: false,
+//       message: "Email verification failed",
+//     });
+//   }
+// };
+
+// Add email validation in controller:
+
 
 // Login user controller
 const login = async (req, res) => {
@@ -146,12 +152,12 @@ const login = async (req, res) => {
     }
 
     // 5. Check if user is verified
-    if (!user.isVerified) {
-      return res.status(400).json({
-        status: false,
-        message: "Please verify your email address",
-      });
-    }
+    // if (!user.isVerified) {
+    //   return res.status(400).json({
+    //     status: false,
+    //     message: "Please verify your email address",
+    //   });
+    // }
 
     // 6. compare the password
     const isPasswordMatch = await user.comparePassword(password);
@@ -164,27 +170,18 @@ const login = async (req, res) => {
       });
     }
 
-    
-
-
-    // / 8. create a JWT token for the user to access protected routes
-    const accessToken = jwt.sign({ id: user._id }, process.env.ACCESSTOKEN_SECRET, {
-      expiresIn: process.env.ACCESSTOKEN_EXPIRY,
+    // 8. create a JWT token for the user to access protected routes
+    const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRY,
     });
-    const refreshToken = jwt.sign({ id: user._id }, process.env.REFRESHTOKEN_SECRET, {
-      expiresIn: process.env.REFRESHTOKEN_EXPIRY,
-    });
-    user.refreshToken=refreshToken
 
-    await user.save();
     // 9. set cookie
     const cookieOptions = {
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       httpOnly: true,
     };
 
-    // res.cookie("jwtToken", jwtToken, cookieOptions);
-    res.cookie("aceessToken", accessToken, cookieOptions);
-    res.cookie("refreshToken", refreshToken, cookieOptions);
+    res.cookie("jwtToken", jwtToken, cookieOptions);
 
     // 10. send response
     return res.status(200).json({
@@ -239,41 +236,20 @@ const getProfile = async (req, res) => {
 
 // logout user controller
 const logout = async (req, res) => {
-  const token=req.cookies.refreshToken;
-  if(!token){
-    return res.status(401).json({
-      status: false,
-      message: "Unauthorized access",
-    });
-  }
-  
   try {
-    // // 1. check if user is logged in
-    // if (!req.user) {
-    //   return res.status(401).json({
-    //     status: false,
-    //     message: "Unauthorized access",
-    //   });
-    // }
-    const refreshDecoded= jwt.verify(token,process.env.REFRESHTOKEN_SECRET)
-  const user =await User.findOne({_id:refreshDecoded.id});
+    // 1. check if user is logged in
+    if (!req.user) {
+      return res.status(401).json({
+        status: false,
+        message: "Unauthorized access",
+      });
+    }
 
-  if(!user){
-    return res.status(401).json({
-      status: false,
-      message: "Unauthorized access",
-    });
-  }
-  user.refreshToken=null;
     // 2. clear cookie
-    res.cookie("accessToken", "", {
+    res.cookie("jwtToken", "", {
+      expires: new Date(Date.now()), // set the cookie to expire immediately after logout
       httpOnly: true,
     });
-    res.cookie("refreshToken", "", {
-      httpOnly: true,
-    });
-    
-
 
     // 3. send response
     return res.status(200).json({
@@ -289,4 +265,4 @@ const logout = async (req, res) => {
   }
 };
 
-export { registerUser, verify, login, getProfile, logout };
+module.exports = { registerUser, login, getProfile, logout };

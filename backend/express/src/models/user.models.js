@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
@@ -32,20 +32,26 @@ const userSchema = new mongoose.Schema(
     verificationTokenExpiry: Date,
     resetPasswordToken: String,
     resetPasswordTokenExpiry: Date,
-    refreshToken: String,
   },
   { timestamps: true }
 );
 
-// use pre-save hook middleware to hash the password before saving the user in DB
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
-    next();
-  } else {
-    this.password = await bcrypt.hash(this.password, 10);
-    next();
-  }
+//use pre-save hook middleware to hash the password before saving the user in DB
+// userSchema.pre("save", async function (next) {
+//   if (!this.isModified("password")) {
+//     next();
+//   } else {
+//     this.password = await bcrypt.hash(this.password, 10);
+//     next();
+//   }
+// });
+
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+
+  this.password = await bcrypt.hash(this.password, 10);
 });
+
 
 // compare password
 userSchema.methods.comparePassword = async function (password) {
@@ -53,4 +59,4 @@ userSchema.methods.comparePassword = async function (password) {
 };
 const User = mongoose.model("User", userSchema);
 
-export default User;
+module.exports = User;
