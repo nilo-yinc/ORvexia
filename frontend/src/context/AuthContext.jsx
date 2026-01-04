@@ -1,7 +1,16 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { getFromStorage, setToStorage, removeFromStorage } from '../utils/helpers';
+import axios from 'axios';
 
 const AuthContext = createContext();
+
+// Create axios instance
+const api = axios.create({
+  baseURL: '/api/v1/users',
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -15,58 +24,64 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const storedUser = getFromStorage('user');
-    if (storedUser) {
-      setUser(storedUser);
+  const fetchUser = async () => {
+    try {
+      const response = await api.get('/get-profile');
+      if (response.data && response.data.status) {
+        setUser(response.data.user);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      // If 401 or other error, user is not logged in
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchUser();
   }, []);
 
-  const login = async (emailOrData, password) => {
-    // Handle both formats: login(email, password) or login({ email, name })
-    let email, name;
-    if (typeof emailOrData === 'string') {
-      email = emailOrData;
-      name = email.split('@')[0];
-    } else if (emailOrData && typeof emailOrData === 'object') {
-      email = emailOrData.email || emailOrData;
-      name = emailOrData.name || email.split('@')[0];
-    } else {
-      email = 'user@example.com';
-      name = 'User';
+  const login = async (email, password) => {
+    try {
+      const response = await api.post('/login', { email, password });
+      if (response.data.status) {
+        await fetchUser();
+        return response.data;
+      }
+      throw new Error(response.data.message || 'Login failed');
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error.response?.data || error;
     }
-
-    const mockUser = {
-      id: '1',
-      email: email,
-      name: name,
-      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200',
-      role: 'Admin',
-    };
-
-    setUser(mockUser);
-    setToStorage('user', mockUser);
-    return mockUser;
   };
 
   const signup = async (name, email, password) => {
-    const mockUser = {
-      id: Date.now().toString(),
-      email: email,
-      name: name,
-      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200',
-      role: 'User',
-    };
-
-    setUser(mockUser);
-    setToStorage('user', mockUser);
-    return mockUser;
+    try {
+      const response = await api.post('/register', { name, email, password });
+      if (response.data.status) {
+        // Auto login after signup
+        await login(email, password);
+        return response.data;
+      }
+      throw new Error(response.data.message || 'Signup failed');
+    } catch (error) {
+      console.error("Signup error:", error);
+      throw error.response?.data || error;
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    removeFromStorage('user');
+  const logout = async () => {
+    try {
+      await api.post('/logout');
+      setUser(null);
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Force logout on client even if server fails
+      setUser(null);
+    }
   };
 
   const value = {
