@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReactFlow, {
   MiniMap,
@@ -40,11 +40,69 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
-  ChevronUp
+  ChevronUp,
+  Bot,
+  Send,
+  Sparkles,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Loader2,
+  Terminal,
+  Repeat,
+  Box,
+  Database,
+  FileCode,
+  User
 } from 'lucide-react';
 import { AppLogos } from './AppLogos';
 
-// --- Configuration Data ---
+// --- DATA: Block Categories ---
+const blockCategories = {
+  Actions: [
+    { name: 'HTTP Request', icon: Globe, description: 'Create and send an HTTP request', color: '#ef4444' },
+    { name: 'Flow Module', icon: Box, description: 'Use another flow inside this flow', color: '#8b5cf6' },
+    { name: 'Database Query', icon: Database, description: 'Query your database', color: '#06b6d4' },
+  ],
+  Trigger: [
+    { name: 'Start', icon: Zap, description: 'Start of the workflow', color: '#10b981' },
+    { name: 'Webhook', icon: Zap, description: 'Trigger on webhook event', color: '#f59e0b' },
+    { name: 'Output', icon: Zap, description: 'Output data from your flow', color: '#14b8a6' },
+  ],
+  AI: [
+    { name: 'AI Agent', icon: Bot, description: 'Build agents that can autonomously complete complex tasks', color: '#6366f1' },
+    { name: 'Create with AI', icon: Sparkles, description: 'Use AI to write text, create images, transform data and more', color: '#8b5cf6' },
+    { name: 'AI Request', icon: FileCode, description: 'Create and send an AI request', color: '#ec4899', badge: 'BETA' },
+  ],
+  Logic: [
+    { name: 'Condition', icon: GitBranch, description: 'Use TypeScript or FQL to define expressions for branching data', color: '#f59e0b' },
+    { name: 'Validate', icon: FileCode, description: 'Ensure your data matches a JSON schema', color: '#06b6d4' },
+    { name: 'If', icon: GitBranch, description: 'Use TypeScript or FQL to branch data to true/false output', color: '#f59e0b' },
+    { name: 'Evaluate', icon: Code, description: 'Transform and query data using TypeScript or FQL', color: '#8b5cf6' },
+    { name: 'Delay', icon: Clock, description: 'Wait for a specified amount of time', color: '#14b8a6' },
+    { name: 'OR', icon: GitBranch, description: 'Outputs only the data from whichever input receives data first', color: '#f59e0b' },
+  ],
+  Looping: [
+    { name: 'For Each', icon: Repeat, description: 'Execute blocks for each item in a collection', color: '#8b5cf6' },
+    { name: 'While', icon: Repeat, description: 'Execute blocks while condition is true', color: '#8b5cf6' },
+  ],
+  Apps: [
+    { name: 'Gmail', logo: 'gmail', description: 'Send and receive emails via Gmail', color: '#EA4335' },
+    { name: 'Google Drive', logo: 'drive', description: 'Access and manage files in Google Drive', color: '#4285F4' },
+    { name: 'Google Sheets', logo: 'sheets', description: 'Create and manage Google Sheets', color: '#34A853' },
+    { name: 'Google Calendar', logo: 'calendar', description: 'Manage events in Google Calendar', color: '#4285F4' },
+    { name: 'Slack', logo: 'slack', description: 'Send messages and notifications to Slack', color: '#4A154B' },
+    { name: 'Telegram', logo: 'telegram', description: 'Send messages via Telegram Bot API', color: '#26A5E4' },
+    { name: 'GitHub', logo: 'github', description: 'Interact with GitHub repositories and issues', color: '#181717' },
+    { name: 'Notion', logo: 'notion', description: 'Create and update Notion pages and databases', color: '#000000' },
+    { name: 'Discord', logo: 'discord', description: 'Send messages and manage Discord servers', color: '#5865F2' },
+    { name: 'Trello', logo: 'trello', description: 'Manage Trello boards, lists, and cards', color: '#0079BF' },
+    { name: 'Outlook', logo: 'outlook', description: 'Send emails and manage Outlook calendar', color: '#0078D4' },
+    { name: 'Excel', logo: 'excel', description: 'Create and update Excel spreadsheets', color: '#217346' },
+    { name: 'Stripe', logo: 'stripe', description: 'Accept payments and manage Stripe', color: '#635BFF' },
+  ],
+};
+
+// --- INITIAL DATA ---
 const popularApps = [
   { name: 'Microsoft Excel', logo: 'excel', category: 'apps', triggers: ['New Row', 'Updated Row'], actions: ['Add Row', 'Update Row', 'Find Row'] },
   { name: 'Google Drive', logo: 'drive', category: 'apps', triggers: ['New File', 'New Folder'], actions: ['Upload File', 'Create Folder', 'Move File'] },
@@ -89,29 +147,52 @@ const initialNodes = [
   {
     id: 'start',
     type: 'input',
-    data: { label: 'Start Workflow', nodeType: 'trigger' },
-    position: { x: 250, y: 50 },
+    data: { label: 'Start', nodeType: 'Trigger' },
+    position: { x: 400, y: 200 },
     style: {
-      background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', 
+      background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
       color: 'white',
       border: 'none',
       borderRadius: '12px',
-      padding: '20px 40px',
+      padding: '16px 24px',
       fontWeight: '600',
-      fontSize: '16px',
+      fontSize: '14px',
       boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
       textAlign: 'center',
+      minWidth: '150px',
     },
   },
 ];
 
 const initialEdges = [];
+const nodeTypes = {}; // Defined outside
 
-const WorkflowCanvasInner = ({ 
-  nodes, edges, onNodesChange, onEdgesChange, onConnect, onNodeClick, 
-  undo, redo, historyIndex, history, addNodeFromApp, setShowAppSelector 
+// --- HELPER: Node Styling ---
+const getNodeStyle = (type = 'default') => ({
+  background: type === 'Trigger' ? 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)' : '#1f2937',
+  color: '#ffffff',
+  border: type === 'Trigger' ? 'none' : '1px solid #374151',
+  borderRadius: '12px',
+  padding: '16px 24px',
+  fontWeight: '600',
+  fontSize: '14px',
+  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+  minWidth: '200px',
+  textAlign: 'center',
+});
+
+// --- INNER CANVAS COMPONENT ---
+const WorkflowCanvasInner = ({
+  nodes, edges, onNodesChange, onEdgesChange, onConnect, onNodeClick,
+  undo, redo, historyIndex, history,
+  openBlockSelector, showBlockSelector,
+  searchQuery, setSearchQuery, filteredBlocks, addBlockFromSelector, setShowBlockSelector
 }) => {
   const { fitView, zoomIn, zoomOut } = useReactFlow();
+
+  const handleZoomIn = () => zoomIn();
+  const handleZoomOut = () => zoomOut();
+  const handleFitView = () => fitView({ padding: 0.2 });
 
   return (
     <>
@@ -122,16 +203,92 @@ const WorkflowCanvasInner = ({
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeClick={onNodeClick}
+        nodeTypes={nodeTypes}
         fitView
-        className="bg-[#0B0D14]" 
+        className="bg-[#0B0D14]"
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#334155" />
         <Controls className="bg-[#1e293b] border-none fill-white text-white rounded-lg shadow-xl" style={{ button: { backgroundColor: '#1e293b', fill: 'white' } }} />
         <MiniMap className="bg-[#1e293b] border-none rounded-lg shadow-xl" nodeColor={(node) => node.style?.background || '#3b82f6'} maskColor="rgba(0, 0, 0, 0.3)" />
       </ReactFlow>
 
+      {/* --- BLOCK SELECTOR POPUP --- */}
+      <AnimatePresence>
+        {showBlockSelector && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[400px] bg-[#111827] border border-[#374151] rounded-xl shadow-2xl overflow-hidden z-[100] flex flex-col max-h-[600px]"
+          >
+            {/* Search Bar */}
+            <div className="p-3 border-b border-[#374151]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search for blocks or requests"
+                  autoFocus
+                  className="w-full pl-9 pr-3 py-2 bg-[#1f2937] border border-[#374151] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* List of Blocks */}
+            <div className="flex-1 overflow-y-auto p-2 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              {Object.entries(filteredBlocks).map(([category, blocks]) => (
+                <div key={category} className="mb-4">
+                  <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{category}</div>
+                  {blocks.map((block, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => addBlockFromSelector(block)}
+                      className="w-full flex items-start gap-3 p-2 rounded-lg hover:bg-[#1f2937] transition text-left group"
+                    >
+                      {block.logo ? (
+                        <div className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 bg-[#1f2937] border border-[#374151] group-hover:border-gray-500 transition">
+                          <AppLogos name={block.logo} className="w-5 h-5" />
+                        </div>
+                      ) : (
+                        <div
+                          className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: `${block.color}20` }}
+                        >
+                          <block.icon className="w-4 h-4" style={{ color: block.color }} />
+                        </div>
+                      )}
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-200 group-hover:text-white">{block.name}</span>
+                          {block.badge && (
+                            <span className="px-1.5 py-0.5 bg-blue-900/50 text-blue-300 text-[10px] font-bold rounded border border-blue-800">
+                              {block.badge}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{block.description}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+            
+            <button 
+                onClick={() => setShowBlockSelector(false)}
+                className="absolute top-3 right-3 text-gray-500 hover:text-white"
+            >
+                <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* FIXED BOTTOM TOOLBAR */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transform translate-x-[-15%]">
         <div className="bg-[#111827] border border-[#374151] rounded-xl shadow-2xl px-4 py-2 flex items-center gap-3">
           <button onClick={undo} disabled={historyIndex === 0} className="p-2 hover:bg-[#1f2937] rounded-lg disabled:opacity-30 transition text-gray-400 hover:text-white" title="Undo">
             <Undo2 className="w-4 h-4" />
@@ -140,15 +297,26 @@ const WorkflowCanvasInner = ({
             <Redo2 className="w-4 h-4" />
           </button>
           <div className="w-px h-6 bg-[#374151]" />
-          <button onClick={() => zoomOut()} className="p-2 hover:bg-[#1f2937] rounded-lg transition text-gray-400 hover:text-white"><ZoomOut className="w-4 h-4" /></button>
-          <button onClick={() => zoomIn()} className="p-2 hover:bg-[#1f2937] rounded-lg transition text-gray-400 hover:text-white"><ZoomIn className="w-4 h-4" /></button>
-          <button onClick={() => fitView()} className="p-2 hover:bg-[#1f2937] rounded-lg transition text-gray-400 hover:text-white"><Maximize2 className="w-4 h-4" /></button>
+          <button onClick={handleZoomOut} className="p-2 hover:bg-[#1f2937] rounded-lg transition text-gray-400 hover:text-white"><ZoomOut className="w-4 h-4" /></button>
+          <button onClick={handleZoomIn} className="p-2 hover:bg-[#1f2937] rounded-lg transition text-gray-400 hover:text-white"><ZoomIn className="w-4 h-4" /></button>
+          <button onClick={handleFitView} className="p-2 hover:bg-[#1f2937] rounded-lg transition text-gray-400 hover:text-white"><Maximize2 className="w-4 h-4" /></button>
           <div className="w-px h-6 bg-[#374151]" />
-          <button onClick={() => setShowAppSelector(true)} className="flex items-center gap-2 px-4 py-2 bg-[#1f2937] hover:bg-[#374151] text-white text-sm font-medium rounded-lg transition border border-[#374151]">
-            <Plus className="w-4 h-4" /> Add Block
+          
+          <button
+            onClick={() => {
+                setShowBlockSelector(!showBlockSelector);
+                setSearchQuery('');
+            }}
+            className={`flex items-center gap-2 px-4 py-2 hover:bg-[#374151] text-white text-sm font-medium rounded-lg transition border border-[#374151] ${showBlockSelector ? 'bg-[#374151]' : 'bg-[#1f2937]'}`}
+          >
+            <Plus className="w-4 h-4" />
+            Block
           </button>
+
           <button className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-lg transition flex items-center gap-2 shadow-lg shadow-orange-900/20">
-            <Play className="w-4 h-4 fill-current" /> Run <ChevronUp className="w-3 h-3" />
+            <Play className="w-4 h-4 fill-current" />
+            Run
+            <ChevronUp className="w-3 h-3" />
           </button>
         </div>
       </div>
@@ -161,17 +329,26 @@ export const WorkflowBuilder = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState(null);
-  const [workflowName, setWorkflowName] = useState('Untitled Workflow');
-  const [showAppSelector, setShowAppSelector] = useState(false);
-  const [showEventSelector, setShowEventSelector] = useState(false);
-  const [selectedApp, setSelectedApp] = useState(null);
+  const [workflowName, setWorkflowName] = useState('New flow module');
+  
+  // States
+  const [showBlockSelector, setShowBlockSelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('home');
   const [history, setHistory] = useState([{ nodes: initialNodes, edges: initialEdges }]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [nodeIdCounter, setNodeIdCounter] = useState(1);
-  const [currentNodeForApp, setCurrentNodeForApp] = useState(null);
+  const [connectingFrom, setConnectingFrom] = useState(null);
+  
+  // AI Copilot State
+  const [isCopilotOpen, setIsCopilotOpen] = useState(true);
+  const [chatInput, setChatInput] = useState('');
+  const [messages, setMessages] = useState([
+    { id: 1, role: 'ai', text: 'Hi! I am your Workflow Copilot. Tell me what you want to build.' }
+  ]);
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  const chatEndRef = useRef(null);
 
+  // Undo/Redo Keys
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
@@ -180,6 +357,11 @@ export const WorkflowBuilder = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [historyIndex, history]);
+
+  // Auto-scroll chat
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isAiTyping]);
 
   const onConnect = useCallback((params) => {
     const newEdges = addEdge({ ...params, animated: true, type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' }, style: { stroke: '#64748b', strokeWidth: 2 } }, edges);
@@ -210,70 +392,72 @@ export const WorkflowBuilder = () => {
     }
   };
 
-  const addNodeFromApp = (app) => {
-    setSelectedApp(app);
-    setShowAppSelector(false);
-    setShowEventSelector(true);
-  };
+  // --- Filtering Logic for Block Selector ---
+  const filteredBlocks = Object.entries(blockCategories).reduce((acc, [category, blocks]) => {
+    const filtered = blocks.filter((block) =>
+      searchQuery === '' || block.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    if (filtered.length > 0) {
+      acc[category] = filtered;
+    }
+    return acc;
+  }, {});
 
-  const selectEventForNode = (event) => {
-    // Styling for new nodes to match the dark UI
-    const nodeStyle = {
-      background: '#1f2937', // Dark background color
-      color: '#ffffff',       // White text color
-      border: '1px solid #374151', // Subtle dark border
-      borderRadius: '12px',
-      padding: '16px 24px',
-      fontWeight: '600',
-      fontSize: '14px',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)', // Darker shadow
-      minWidth: '200px',
-      textAlign: 'center',
+  const addBlockFromSelector = (block) => {
+    let nodeType = 'default';
+    let nodeData = {
+      label: block.name,
+      nodeType: block.name, 
+      description: block.description,
+      app: block.logo ? block.name : undefined, 
+      icon: block.logo || undefined
     };
 
-    if (!currentNodeForApp) {
-        const newNode = {
-            id: `node_${nodeIdCounter}`,
-            type: 'default',
-            data: {
-              label: `${selectedApp.name}: ${event}`,
-              nodeType: 'Action',
-              icon: selectedApp.logo, 
-              app: selectedApp.name,
-              event: event,
-              description: `Action using ${selectedApp.name}`
-            },
-            position: { x: 250 + Math.random() * 50, y: 150 + Math.random() * 50 },
-            style: nodeStyle,
-          };
-          setNodeIdCounter(nodeIdCounter + 1);
-          const newNodes = [...nodes, newNode];
-          setNodes(newNodes);
-          saveHistory(newNodes, edges);
-    } else {
-        const updatedNodes = nodes.map(node => {
-            if (node.id === currentNodeForApp) {
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  label: `${selectedApp.name}: ${event}`,
-                  app: selectedApp.name,
-                  event: event,
-                  icon: selectedApp.logo,
-                  needsConfiguration: false,
-                },
-                style: nodeStyle
-              };
-            }
-            return node;
-          });
-          setNodes(updatedNodes);
-          saveHistory(updatedNodes, edges);
+    // Styling logic
+    const nodeStyle = getNodeStyle('Action');
+
+    if (block.name === 'Start' || block.name === 'Webhook') {
+        nodeType = 'input'; 
+        nodeData.nodeType = 'Trigger';
+        Object.assign(nodeStyle, getNodeStyle('Trigger'));
     }
-    setShowEventSelector(false);
-    setSelectedApp(null);
-    setCurrentNodeForApp(null);
+
+    const newNode = {
+      id: `node_${nodeIdCounter}`,
+      type: nodeType,
+      data: nodeData,
+      position: { x: Math.random() * 300 + 200, y: Math.random() * 300 + 100 },
+      style: nodeStyle
+    };
+
+    setNodeIdCounter(nodeIdCounter + 1);
+    const newNodes = [...nodes, newNode];
+    setNodes(newNodes);
+
+    if (connectingFrom) {
+      const newEdge = {
+        id: `edge_${connectingFrom}_${newNode.id}`,
+        source: connectingFrom,
+        target: newNode.id,
+        animated: true,
+        type: 'smoothstep',
+        markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' },
+        style: { stroke: '#64748b', strokeWidth: 2 },
+      };
+      const newEdges = [...edges, newEdge];
+      setEdges(newEdges);
+      saveHistory(newNodes, newEdges);
+      setConnectingFrom(null);
+    } else {
+      saveHistory(newNodes, edges);
+    }
+
+    setShowBlockSelector(false);
+    setSearchQuery('');
+  };
+
+  const onNodeClick = (event, node) => {
+    setSelectedNode(node);
   };
 
   const deleteNode = (nodeId) => {
@@ -281,307 +465,268 @@ export const WorkflowBuilder = () => {
     const newEdges = edges.filter(e => e.source !== nodeId && e.target !== nodeId);
     setNodes(newNodes);
     setEdges(newEdges);
-    saveHistory(newNodes, newEdges);
     setSelectedNode(null);
   };
 
-  const duplicateNode = (node) => {
-    const newNode = { ...node, id: `node_${nodeIdCounter}`, position: { x: node.position.x + 50, y: node.position.y + 50 } };
-    setNodeIdCounter(nodeIdCounter + 1);
-    const newNodes = [...nodes, newNode];
-    setNodes(newNodes);
-    saveHistory(newNodes, edges);
+  // --- AI Chat Logic ---
+  const handleSendMessage = async (e) => {
+    e?.preventDefault();
+    if (!chatInput.trim()) return;
+    const userMsg = { id: Date.now(), role: 'user', text: chatInput };
+    setMessages(prev => [...prev, userMsg]);
+    setChatInput('');
+    setIsAiTyping(true);
+    setTimeout(() => {
+        processAiCommand(userMsg.text);
+    }, 1500);
   };
 
-  const onNodeClick = (event, node) => setSelectedNode(node);
+  const handleQuickAction = (actionText) => {
+    // Directly add user message and trigger AI
+    const userMsg = { id: Date.now(), role: 'user', text: actionText };
+    setMessages(prev => [...prev, userMsg]);
+    setIsAiTyping(true);
+    setTimeout(() => {
+        processAiCommand(actionText);
+    }, 1500);
+  };
 
-  const filteredApps = [...popularApps, ...builtInTools].filter(app => {
-    const matchesSearch = searchQuery === '' || app.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'home' ? true : app.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const processAiCommand = (text) => {
+    const lowerText = text.toLowerCase();
+    let responseText = "I didn't quite catch that. Try saying 'Add Gmail' or 'Connect to GitHub'.";
+    let newNode = null;
+
+    if (lowerText.includes('github')) {
+        responseText = "I've added a GitHub trigger for you. Do you want to trigger on a new commit or a PR?";
+        newNode = createNode('GitHub', 'github', 'Trigger', 'New Commit');
+    } else if (lowerText.includes('gmail') || lowerText.includes('email')) {
+        responseText = "Added Gmail action. Who should we send this email to?";
+        newNode = createNode('Gmail', 'gmail', 'Action', 'Send Email');
+    } else if (lowerText.includes('slack')) {
+        responseText = "Slack action added. I've connected it to the previous step.";
+        newNode = createNode('Slack', 'slack', 'Action', 'Send Message');
+    } else if (lowerText.includes('drive')) {
+        responseText = "Google Drive connected. Ready to upload files.";
+        newNode = createNode('Google Drive', 'drive', 'Action', 'Upload File');
+    } else if (lowerText.includes('notion')) {
+        responseText = "Notion page creation action added.";
+        newNode = createNode('Notion', 'notion', 'Action', 'Create Page');
+    } else if (lowerText.includes('start')) {
+        responseText = "Starting a fresh workflow.";
+        newNode = createNode('Start', 'zap', 'Trigger', 'Manual Start');
+    }
+
+    if (newNode) {
+        addAiNodeToCanvas(newNode);
+    }
+
+    setMessages(prev => [...prev, { id: Date.now(), role: 'ai', text: responseText }]);
+    setIsAiTyping(false);
+  };
+
+  const createNode = (name, icon, type, event) => {
+    return {
+        id: `node_${Date.now()}`,
+        type: 'default',
+        data: { 
+            label: `${name}: ${event}`, 
+            nodeType: type, 
+            icon: icon, 
+            app: name, 
+            event: event,
+            description: `Automated ${type} using ${name}`
+        },
+        style: getNodeStyle(type),
+        position: { x: 250, y: 100 }
+    };
+  };
+
+  const addAiNodeToCanvas = (newNode) => {
+    setNodes((nds) => {
+        const lastNode = nds[nds.length - 1];
+        let newPos = { x: 400, y: 200 };
+        
+        if (lastNode) {
+            newPos = { x: lastNode.position.x + 250, y: lastNode.position.y }; // Horizontal Layout
+        }
+
+        const positionedNode = { ...newNode, position: newPos };
+        const newNodesList = [...nds, positionedNode];
+        
+        if (lastNode) {
+            const newEdge = {
+                id: `e${lastNode.id}-${positionedNode.id}`,
+                source: lastNode.id,
+                target: positionedNode.id,
+                type: 'smoothstep',
+                animated: true,
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' },
+                style: { stroke: '#64748b', strokeWidth: 2 }
+            };
+            setEdges((eds) => [...eds, newEdge]);
+        }
+        
+        return newNodesList;
+    });
+  };
 
   return (
-    <div className="h-screen flex flex-col bg-[#0B0D14] overflow-hidden text-gray-100">
+    <div className="h-screen flex flex-col bg-[#0B0D14] overflow-hidden text-gray-100 font-sans">
       
-      {/* FIXED HEADER */}
-      <div className="h-14 bg-[#111827] border-b border-[#1f2937] flex items-center justify-between px-6 flex-shrink-0 z-10">
+      {/* Header */}
+      <div className="h-14 bg-[#111827] border-b border-[#1f2937] flex items-center justify-between px-4 flex-shrink-0 z-20">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/workflows')} className="flex items-center gap-2 text-gray-400 hover:text-white transition text-sm font-medium">
             <ArrowLeft className="w-4 h-4" />
             <span>Back</span>
           </button>
-          <div className="h-6 w-px bg-[#374151] mx-2" />
+          <div className="h-6 w-px bg-[#374151]" />
           <input
             type="text"
             value={workflowName}
             onChange={(e) => setWorkflowName(e.target.value)}
             className="bg-transparent border-none text-sm font-medium text-white focus:ring-0 p-0 w-64 placeholder-gray-500"
-            placeholder="Name your workflow..."
           />
         </div>
         
-        {/* Right side simple actions */}
-        <div className="flex items-center gap-3">
-           <button className="text-sm text-gray-400 hover:text-white transition">Saved</button>
-           <button className="p-2 hover:bg-[#1f2937] rounded-full transition text-gray-400">
-             <SettingsIcon className="w-5 h-5" />
-           </button>
-        </div>
+        <button 
+            onClick={() => setIsCopilotOpen(!isCopilotOpen)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition border ${isCopilotOpen ? 'bg-indigo-600/20 border-indigo-500/50 text-indigo-300' : 'bg-[#1f2937] border-[#374151] text-gray-400'}`}
+        >
+            <Sparkles className="w-4 h-4" />
+            {isCopilotOpen ? 'Copilot Active' : 'Enable Copilot'}
+        </button>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Main Canvas Area */}
+        
+        {/* --- AI COPILOT SIDEBAR --- */}
+        <AnimatePresence mode='wait'>
+            {isCopilotOpen && (
+                <motion.div
+                    initial={{ width: 0, opacity: 0 }} animate={{ width: 340, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+                    className="bg-[#111827] border-r border-[#1f2937] flex flex-col z-10"
+                >
+                    <div className="p-4 border-b border-[#1f2937] flex items-center justify-between bg-[#111827]">
+                        <div className="flex items-center gap-2">
+                            <Bot className="w-5 h-5 text-indigo-400" />
+                            <h3 className="font-semibold text-white">AI Builder</h3>
+                        </div>
+                        <button onClick={() => setIsCopilotOpen(false)} className="text-gray-500 hover:text-white">
+                            <PanelLeftClose className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0B0D14] [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                        {messages.map((msg) => (
+                            <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'ai' ? 'bg-indigo-600' : 'bg-gray-700'}`}>
+                                    {msg.role === 'ai' ? <Bot className="w-4 h-4 text-white" /> : <div className="text-xs font-bold text-white">U</div>}
+                                </div>
+                                <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${msg.role === 'ai' ? 'bg-[#1f2937] text-gray-200 rounded-tl-none' : 'bg-indigo-600 text-white rounded-tr-none'}`}>
+                                    {msg.text}
+                                </div>
+                            </div>
+                        ))}
+                        {isAiTyping && (
+                            <div className="flex gap-3"><div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center shrink-0"><Bot className="w-4 h-4 text-white" /></div><div className="bg-[#1f2937] px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-1"><span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" /><span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-100" /><span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-200" /></div></div>
+                        )}
+                        <div ref={chatEndRef} />
+                    </div>
+
+                    {/* Quick Actions Chips (RESTORED) */}
+                    <div className="px-4 py-2 flex gap-2 overflow-x-auto border-t border-[#1f2937] bg-[#111827] [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                        {['Connect GitHub', 'Send Email', 'Add Slack', 'Create Notion Page'].map(action => (
+                            <button 
+                                key={action} 
+                                onClick={() => handleQuickAction(action)}
+                                className="whitespace-nowrap px-3 py-1 bg-[#1f2937] hover:bg-[#374151] border border-[#374151] rounded-full text-xs text-gray-300 transition"
+                            >
+                                {action}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="p-4 bg-[#111827] border-t border-[#1f2937]">
+                        <form onSubmit={handleSendMessage} className="relative">
+                            <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Describe what to build..." className="w-full bg-[#1f2937] border border-[#374151] text-white rounded-xl py-3 pl-4 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                            <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"><Send className="w-4 h-4" /></button>
+                        </form>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* --- CANVAS --- */}
         <div className="flex-1 relative">
+           {!isCopilotOpen && (
+               <button onClick={() => setIsCopilotOpen(true)} className="absolute top-4 left-4 z-10 p-2 bg-[#1f2937] border border-[#374151] rounded-lg text-gray-400 hover:text-white shadow-lg"><PanelLeftOpen className="w-5 h-5" /></button>
+           )}
            <ReactFlowProvider>
               <WorkflowCanvasInner 
                 nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
                 onConnect={onConnect} onNodeClick={onNodeClick} undo={undo} redo={redo}
                 historyIndex={historyIndex} history={history} 
-                addNodeFromApp={addNodeFromApp} setShowAppSelector={setShowAppSelector}
+                openBlockSelector={() => setShowBlockSelector(true)}
+                showBlockSelector={showBlockSelector}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                filteredBlocks={filteredBlocks}
+                addBlockFromSelector={addBlockFromSelector}
+                setShowBlockSelector={setShowBlockSelector}
               />
            </ReactFlowProvider>
         </div>
 
-        {/* RIGHT SIDEBAR - NODE SETTINGS */}
+        {/* --- RIGHT SIDEBAR: NODE SETTINGS --- */}
         <AnimatePresence>
-          {selectedNode && selectedNode.id !== 'start' && (
+          {selectedNode && (
             <motion.div
               initial={{ x: 320 }} animate={{ x: 0 }} exit={{ x: 320 }}
               className="w-96 bg-[#111827] border-l border-[#1f2937] flex flex-col flex-shrink-0 z-20 shadow-2xl"
             >
-              {/* Sidebar Header */}
               <div className="p-5 border-b border-[#1f2937] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-orange-600 rounded-md">
-                    <SettingsIcon className="w-4 h-4 text-white" />
-                  </div>
-                  <h3 className="text-base font-bold text-white">Node Settings</h3>
-                </div>
-                <button onClick={() => setSelectedNode(null)} className="text-gray-500 hover:text-white transition">
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2"><div className="p-1.5 bg-orange-600 rounded-md"><SettingsIcon className="w-4 h-4 text-white" /></div><h3 className="text-base font-bold text-white">Node Settings</h3></div>
+                <button onClick={() => setSelectedNode(null)} className="text-gray-500 hover:text-white transition"><X className="w-5 h-5" /></button>
               </div>
-
-              <div className="p-5 overflow-y-auto space-y-6">
+              <div className="p-5 overflow-y-auto space-y-6 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 
-                {/* Node Type Display */}
-                <div>
-                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Node Type</label>
-                   <div className="text-sm font-medium text-white bg-[#1f2937] px-3 py-2 rounded-lg border border-[#374151]">
-                      {selectedNode.data.nodeType || 'Action'}
-                   </div>
-                </div>
+                {/* 1. Basic Info */}
+                <div><label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Node Name</label><input type="text" value={selectedNode.data.label} onChange={(e) => { const updated = nodes.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, label: e.target.value } } : n); setNodes(updated); }} className="w-full px-3 py-2.5 bg-[#1f2937] border border-[#374151] rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500 transition" /></div>
 
-                {/* Node Name Input */}
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Node Name</label>
-                  <input
-                    type="text"
-                    value={selectedNode.data.label}
-                    onChange={(e) => {
-                      const updatedNodes = nodes.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, label: e.target.value } } : n);
-                      setNodes(updatedNodes);
-                    }}
-                    className="w-full px-3 py-2.5 bg-[#1f2937] border border-[#374151] rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
-                  />
-                </div>
-
-                {/* Connected App Card */}
+                {/* 2. Connected App Display */}
                 {selectedNode.data.app && (
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Connected App</label>
-                    <div className="p-4 bg-[#1f2937] border border-[#374151] rounded-xl flex items-start gap-4">
-                      <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[#111827] rounded-lg border border-[#374151]">
-                         {selectedNode.data.icon ? <AppLogos name={selectedNode.data.icon} className="w-6 h-6"/> : <Zap className="w-6 h-6 text-white"/>}
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-white">{selectedNode.data.app}</div>
-                        <div className="text-xs text-orange-500 mt-1 font-medium">Event: {selectedNode.data.event}</div>
-                      </div>
-                    </div>
-                  </div>
+                  <div><label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Connected App</label><div className="p-4 bg-[#1f2937] border border-[#374151] rounded-xl flex items-center gap-4"><div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[#111827] rounded-lg border border-[#374151]">{selectedNode.data.icon ? <AppLogos name={selectedNode.data.icon} className="w-6 h-6"/> : <Zap className="w-6 h-6 text-white"/>}</div><div><div className="text-sm font-bold text-white">{selectedNode.data.app}</div><div className="text-xs text-green-400 mt-0.5 flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Connected</div></div></div></div>
                 )}
 
-                {/* Description */}
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Description</label>
-                  <textarea
-                    rows={3}
-                    className="w-full px-3 py-2.5 bg-[#1f2937] border border-[#374151] rounded-lg text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none transition"
-                    placeholder="Describe what this step does..."
-                    defaultValue={selectedNode.data.description || ''}
-                  />
-                </div>
+                {/* 3. DYNAMIC CONFIGURATION FORM */}
+                {selectedNode.data.app && (
+                    <div className="pt-2 border-t border-[#374151] mt-2">
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 mt-4">Configuration</h4>
+                        <div className="mb-4">
+                            <label className="block text-xs text-gray-400 mb-1.5">Select Account</label>
+                            <div className="flex items-center justify-between px-3 py-2 bg-[#1f2937] border border-[#374151] rounded-lg"><div className="flex items-center gap-2"><div className="w-5 h-5 bg-gray-700 rounded-full flex items-center justify-center"><User className="w-3 h-3 text-gray-400"/></div><span className="text-sm text-white">Admin Account</span></div><ChevronUp className="w-4 h-4 text-gray-500 rotate-180" /></div>
+                        </div>
+                        {selectedNode.data.app.toLowerCase().includes('mail') ? (
+                            <div className="space-y-4"><div><label className="block text-xs text-gray-400 mb-1.5">To (Recipient)</label><input type="text" placeholder="name@example.com" className="w-full px-3 py-2 bg-[#1f2937] border border-[#374151] rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-orange-500" /></div><div><label className="block text-xs text-gray-400 mb-1.5">Subject</label><input type="text" placeholder="Enter subject line" className="w-full px-3 py-2 bg-[#1f2937] border border-[#374151] rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-orange-500" /></div><div><label className="block text-xs text-gray-400 mb-1.5">Body</label><textarea rows={4} placeholder="Email content..." className="w-full px-3 py-2 bg-[#1f2937] border border-[#374151] rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 resize-none" /></div></div>
+                        ) : selectedNode.data.app.toLowerCase().includes('slack') || selectedNode.data.app.toLowerCase().includes('discord') ? (
+                            <div className="space-y-4"><div><label className="block text-xs text-gray-400 mb-1.5">Channel</label><select className="w-full px-3 py-2 bg-[#1f2937] border border-[#374151] rounded-lg text-sm text-white focus:outline-none focus:border-orange-500"><option>#general</option><option>#random</option><option>#alerts</option></select></div><div><label className="block text-xs text-gray-400 mb-1.5">Message Text</label><textarea rows={3} placeholder="Type your message..." className="w-full px-3 py-2 bg-[#1f2937] border border-[#374151] rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 resize-none" /></div></div>
+                        ) : (
+                            <div className="space-y-4"><div><label className="block text-xs text-gray-400 mb-1.5">Action Input</label><input type="text" placeholder="Enter value..." className="w-full px-3 py-2 bg-[#1f2937] border border-[#374151] rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-orange-500" /></div></div>
+                        )}
+                    </div>
+                )}
 
-                {/* Advanced Settings Section */}
-                <div className="pt-2">
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Advanced Settings</h4>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-[#1f2937] border border-[#374151] rounded-lg">
-                      <span className="text-sm font-medium text-gray-300">Retry on Failure</span>
-                      <input type="checkbox" defaultChecked className="w-4 h-4 text-orange-600 bg-[#111827] border-gray-600 rounded focus:ring-orange-500 focus:ring-2" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-400 mb-2">Max Retries</label>
-                      <input type="number" defaultValue="3" min="0" max="10" className="w-full px-3 py-2 bg-[#1f2937] border border-[#374151] rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-400 mb-2">Timeout (seconds)</label>
-                      <input type="number" defaultValue="30" min="1" max="300" className="w-full px-3 py-2 bg-[#1f2937] border border-[#374151] rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500 transition" />
-                    </div>
-                  </div>
+                {/* 4. Advanced & Delete */}
+                <div className="pt-2 border-t border-[#374151] mt-2">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 mt-2">Advanced</h4>
+                  <div className="flex items-center justify-between p-3 bg-[#1f2937] border border-[#374151] rounded-lg mb-3"><span className="text-sm font-medium text-gray-300">Retry on Failure</span><input type="checkbox" defaultChecked className="w-4 h-4 text-orange-600 bg-[#111827] border-gray-600 rounded focus:ring-orange-500 focus:ring-2" /></div>
                 </div>
-
-                {/* Action Buttons */}
-                <div className="pt-2 grid grid-cols-2 gap-3">
-                  <button onClick={() => duplicateNode(selectedNode)} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1f2937] text-gray-300 font-medium rounded-lg hover:bg-[#374151] hover:text-white transition border border-[#374151]">
-                    <Copy className="w-4 h-4" /> Duplicate
-                  </button>
-                  <button onClick={() => deleteNode(selectedNode.id)} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-900/20 text-red-400 font-medium rounded-lg hover:bg-red-900/40 transition border border-red-900/30">
-                    <Trash2 className="w-4 h-4" /> Delete
-                  </button>
-                </div>
+                <div className="pt-2"><button onClick={() => deleteNode(selectedNode.id)} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-900/20 text-red-400 font-medium rounded-lg hover:bg-red-900/40 transition border border-red-900/30 w-full"><Trash2 className="w-4 h-4" /> Delete Node</button></div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-
-      {/* App Selector Modal - Dark Theme */}
-      <AnimatePresence>
-        {showAppSelector && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
-            onClick={() => setShowAppSelector(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-[#111827] rounded-xl max-w-4xl w-full max-h-[85vh] overflow-hidden shadow-2xl border border-[#374151] flex"
-            >
-               {/* Categories Sidebar */}
-               <div className="w-56 bg-[#0B0D14] border-r border-[#1f2937] p-4 overflow-y-auto">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 px-2">Categories</h3>
-                  <div className="space-y-1">
-                    {appCategories.map((cat) => (
-                      <button
-                        key={cat.id}
-                        onClick={() => { setSelectedCategory(cat.id); setSearchQuery(''); }}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
-                          selectedCategory === cat.id ? 'bg-orange-600 text-white' : 'text-gray-400 hover:bg-[#1f2937] hover:text-white'
-                        }`}
-                      >
-                        <cat.icon className="w-4 h-4" />
-                        {cat.label}
-                      </button>
-                    ))}
-                  </div>
-               </div>
-
-               <div className="flex-1 flex flex-col bg-[#111827]">
-                  <div className="p-6 border-b border-[#1f2937]">
-                    <h2 className="text-xl font-bold text-white mb-4">Choose an App</h2>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search apps..."
-                        autoFocus
-                        className="w-full pl-10 pr-4 py-3 bg-[#1f2937] border border-[#374151] rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="p-6 overflow-y-auto max-h-[60vh]">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {filteredApps.map((app, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => addNodeFromApp(app)}
-                          className="flex items-center gap-4 p-4 bg-[#1f2937] rounded-xl hover:ring-2 hover:ring-orange-500 border border-[#374151] transition text-left group hover:bg-[#2d3748]"
-                        >
-                          <div className="w-10 h-10 flex items-center justify-center bg-[#111827] rounded-full group-hover:scale-110 transition shrink-0 border border-[#374151]">
-                              {app.logo ? (
-                                <AppLogos name={app.logo} className="w-6 h-6" />
-                              ) : (
-                                typeof app.icon === 'string' ? <span className="text-xl">{app.icon}</span> : <app.icon className="w-5 h-5 text-gray-400" />
-                              )}
-                          </div>
-                          <span className="text-sm font-semibold text-gray-200 group-hover:text-white truncate">
-                            {app.name}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Event Selector Modal - Dark Theme */}
-      <AnimatePresence>
-        {showEventSelector && selectedApp && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
-            onClick={() => { setShowEventSelector(false); setSelectedApp(null); }}
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-[#111827] rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl border border-[#374151]"
-            >
-               <div className="p-6 border-b border-[#1f2937] flex items-center gap-4 bg-[#1f2937]/50">
-                  <div className="w-14 h-14 flex items-center justify-center bg-[#111827] rounded-xl border border-[#374151]">
-                     {selectedApp.logo ? <AppLogos name={selectedApp.logo} className="w-8 h-8" /> : <Zap className="w-8 h-8 text-orange-500" />}
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">{selectedApp.name}</h2>
-                    <p className="text-sm text-gray-400">Choose a trigger or action</p>
-                  </div>
-               </div>
-               <div className="p-6 overflow-y-auto max-h-[60vh] space-y-8">
-                  {selectedApp.triggers && (
-                    <div>
-                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <Zap className="w-3 h-3" /> Triggers
-                      </h3>
-                      <div className="grid gap-2">
-                        {selectedApp.triggers.map((t, i) => (
-                           <button key={i} onClick={() => selectEventForNode(t)} className="w-full text-left p-4 rounded-lg bg-[#1f2937] border border-[#374151] hover:border-orange-500 hover:bg-[#2d3748] transition flex items-center justify-between group">
-                              <span className="text-sm font-medium text-gray-200 group-hover:text-white">{t}</span>
-                              <Plus className="w-4 h-4 text-gray-500 group-hover:text-orange-500" />
-                           </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {selectedApp.actions && (
-                    <div>
-                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <Play className="w-3 h-3" /> Actions
-                      </h3>
-                      <div className="grid gap-2">
-                        {selectedApp.actions.map((a, i) => (
-                           <button key={i} onClick={() => selectEventForNode(a)} className="w-full text-left p-4 rounded-lg bg-[#1f2937] border border-[#374151] hover:border-blue-500 hover:bg-[#2d3748] transition flex items-center justify-between group">
-                              <span className="text-sm font-medium text-gray-200 group-hover:text-white">{a}</span>
-                              <Plus className="w-4 h-4 text-gray-500 group-hover:text-blue-500" />
-                           </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
