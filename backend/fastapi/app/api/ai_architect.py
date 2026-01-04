@@ -18,7 +18,7 @@ async def generate_workflow_structure(request: ChatRequest):
             api_key=settings.GROQ_API_KEY,
             model="openai/gpt-oss-120b",
             temperature=0
-        )``
+        )
         
         structured_llm = llm.with_structured_output(WorkflowDefinition)
         
