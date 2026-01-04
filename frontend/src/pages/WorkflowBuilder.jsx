@@ -54,6 +54,7 @@ import {
   FileCode,
   User,
 } from "lucide-react";
+import { io } from "socket.io-client";
 import { AppLogos } from "./AppLogos";
 import { workflowApi } from "../lib/api";
 
@@ -528,6 +529,7 @@ const WorkflowCanvasInner = ({
   filteredBlocks,
   addBlockFromSelector,
   setShowBlockSelector,
+  onRun,
 }) => {
   const { fitView, zoomIn, zoomOut } = useReactFlow();
 
@@ -706,7 +708,10 @@ const WorkflowCanvasInner = ({
             Block
           </button>
 
-          <button className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-lg transition flex items-center gap-2 shadow-lg shadow-orange-900/20">
+          <button
+            onClick={onRun}
+            className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-lg transition flex items-center gap-2 shadow-lg shadow-orange-900/20"
+          >
             <Play className="w-4 h-4 fill-current" />
             Run
             <ChevronUp className="w-3 h-3" />
@@ -727,10 +732,9 @@ export const WorkflowBuilder = () => {
 
   // States
   const [showBlockSelector, setShowBlockSelector] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [history, setHistory] = useState([
-    { nodes: initialNodes, edges: initialEdges },
-  ]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('home');
+  const [history, setHistory] = useState([{ nodes: initialNodes, edges: initialEdges }]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [nodeIdCounter, setNodeIdCounter] = useState(1);
   const [currentNodeForApp, setCurrentNodeForApp] = useState(null);
@@ -803,6 +807,59 @@ export const WorkflowBuilder = () => {
       setIsSaving(false);
     }
   };
+
+  const handleRun = async () => {
+    if (!triggerSlug) {
+      alert("Please save the workflow first to generate a trigger slug.");
+      return;
+    }
+    try {
+        await fetch(`/api/webhook/${triggerSlug}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ test: true }) 
+        });
+    } catch (e) {
+        console.error("Run failed", e);
+    }
+  };
+
+  useEffect(() => {
+    const socket = io('http://localhost:3000'); 
+
+    socket.on('connect', () => {
+        console.log('Connected to socket server');
+    });
+
+    socket.on('workflow_update', (data) => {
+        setNodes((nds) =>
+            nds.map((node) => {
+                if (node.id === data.nodeId) {
+                    let newStyle = { ...node.style };
+                    if (data.status === 'RUNNING') {
+                        newStyle.border = '2px solid #fbbf24'; 
+                        newStyle.boxShadow = '0 0 15px rgba(251, 191, 36, 0.6)';
+                        newStyle.transition = 'all 0.3s ease';
+                    } else if (data.status === 'SUCCESS') {
+                        newStyle.border = '2px solid #10b981'; 
+                        newStyle.boxShadow = '0 0 15px rgba(16, 185, 129, 0.6)';
+                        newStyle.transition = 'all 0.3s ease';
+                    } else if (data.status === 'FAILED') {
+                        newStyle.border = '2px solid #ef4444'; 
+                        newStyle.boxShadow = '0 0 15px rgba(239, 68, 68, 0.6)';
+                        newStyle.transition = 'all 0.3s ease';
+                    }
+                    return { ...node, style: newStyle };
+                }
+                return node;
+            })
+        );
+    });
+
+    return () => {
+        socket.disconnect();
+    };
+  }, [setNodes]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -1198,6 +1255,7 @@ export const WorkflowBuilder = () => {
                   filteredBlocks={filteredBlocks}
                   addBlockFromSelector={addBlockFromSelector}
                   setShowBlockSelector={setShowBlockSelector}
+                  onRun={handleRun}
                 />
               </ReactFlowProvider>
             </>
