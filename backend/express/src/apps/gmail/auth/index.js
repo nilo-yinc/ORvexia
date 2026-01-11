@@ -1,4 +1,9 @@
-module.exports = {
+import generateAuthUrl from './generate-auth-url.js';
+import verifyCredentials from './verify-credentials.js';
+import refreshToken from './refresh-token.js';
+import isStillVerified from './is-still-verified.js';
+
+export default {
   fields: [
     {
       key: 'oAuthRedirectUrl',
@@ -6,20 +11,16 @@ module.exports = {
       type: 'string',
       required: true,
       readOnly: true,
-      value: '{WEB_APP_URL}/app/gmail/connections/add', 
-      docUrl: 'https://developers.google.com/gmail/api/guides/auth',
-    },
-    {
-      key: 'clientId',
-      label: 'Client ID',
-      type: 'string',
-      required: true,
-    },
-    {
-      key: 'clientSecret',
-      label: 'Client Secret',
-      type: 'string',
-      required: true,
+      value: '{WEB_APP_URL}/app/gmail/connections/add',
+      placeholder: null,
+      description:
+        'When asked to input a redirect URL in Google Cloud, enter the URL above.',
+      clickToCopy: true,
     },
   ],
+
+  generateAuthUrl,
+  verifyCredentials,
+  isStillVerified,
+  refreshToken,
 };

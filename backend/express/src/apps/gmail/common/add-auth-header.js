@@ -1,6 +1,12 @@
-module.exports = (context, requestConfig) => {
-  if (requestConfig.headers && context.auth.data && context.auth.data.accessToken) {
-    requestConfig.headers.Authorization = `Bearer ${context.auth.data.accessToken}`;
+const addAuthHeader = ($, requestConfig) => {
+  if (
+    !requestConfig.additionalProperties?.skipAddingAuthHeader &&
+    $.auth.data?.accessToken
+  ) {
+    requestConfig.headers.Authorization = `${$.auth.data.tokenType} ${$.auth.data.accessToken}`;
   }
+
   return requestConfig;
 };
+
+export default addAuthHeader;
