@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, Star, Zap, Globe, Shield, BarChart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { features, testimonials, pricingPlans } from '../utils/mockData';
+import { features, testimonials, pricingPlans } from '../utils/mockdata';
 
 export const Landing = () => {
   const navigate = useNavigate();
