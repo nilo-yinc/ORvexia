@@ -9,4 +9,4 @@ const addAuthHeader = ($, requestConfig) => {
   return requestConfig;
 };
 
-export default addAuthHeader;
+module.exports = addAuthHeader;

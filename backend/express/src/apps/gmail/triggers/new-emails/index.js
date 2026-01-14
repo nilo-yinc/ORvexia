@@ -1,6 +1,6 @@
-import defineTrigger from '../../../../helpers/define-trigger.js';
+const defineTrigger = require('../../../../helpers/define-trigger.js');
 
-export default defineTrigger({
+module.exports = defineTrigger({
   name: 'New emails',
   key: 'newEmails',
   pollInterval: 15,

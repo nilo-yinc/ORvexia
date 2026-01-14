@@ -1,7 +1,7 @@
-import { URLSearchParams } from 'url';
-import authScope from '../common/auth-scope.js';
+const { URLSearchParams } = require('url');
+const authScope = require('../common/auth-scope.js');
 
-export default async function generateAuthUrl($) {
+module.exports = async function generateAuthUrl($) {
   const oauthRedirectUrlField = $.app.auth.fields.find(
     (field) => field.key == 'oAuthRedirectUrl'
   );

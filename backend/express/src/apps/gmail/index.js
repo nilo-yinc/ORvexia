@@ -1,11 +1,11 @@
-import defineApp from '../../helpers/define-app.js';
-import addAuthHeader from './common/add-auth-header.js';
-import auth from './auth/index.js';
-import triggers from './triggers/index.js';
-import dynamicData from './dynamic-data/index.js';
-import actions from './actions/index.js';
+const defineApp = require('../../helpers/define-app.js');
+const addAuthHeader = require('./common/add-auth-header.js');
+const auth = require('./auth/index.js');
+const triggers = require('./triggers/index.js');
+const dynamicData = require('./dynamic-data/index.js');
+const actions = require('./actions/index.js');
 
-export default defineApp({
+module.exports = defineApp({
   name: 'Gmail',
   key: 'gmail',
   baseUrl: 'https://mail.google.com',

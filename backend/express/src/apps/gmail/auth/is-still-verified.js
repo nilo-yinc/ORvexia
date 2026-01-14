@@ -1,8 +1,8 @@
-import getCurrentUser from '../common/get-current-user.js';
+const getCurrentUser = require('../common/get-current-user.js');
 
 const isStillVerified = async ($) => {
   const currentUser = await getCurrentUser($);
   return !!currentUser.resourceName;
 };
 
-export default isStillVerified;
+module.exports = isStillVerified;

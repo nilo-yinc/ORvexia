@@ -1,6 +1,6 @@
-import { URLSearchParams } from 'node:url';
+const { URLSearchParams } = require('url');
 
-import authScope from '../common/auth-scope.js';
+const authScope = require('../common/auth-scope.js');
 
 const refreshToken = async ($) => {
   const params = new URLSearchParams({
@@ -28,4 +28,4 @@ const refreshToken = async ($) => {
   });
 };
 
-export default refreshToken;
+module.exports = refreshToken;

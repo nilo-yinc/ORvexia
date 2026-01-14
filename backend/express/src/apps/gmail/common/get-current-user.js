@@ -5,4 +5,4 @@ const getCurrentUser = async ($) => {
   return currentUser;
 };
 
-export default getCurrentUser;
+module.exports = getCurrentUser;

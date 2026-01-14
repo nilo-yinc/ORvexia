@@ -1,4 +1,4 @@
-import createDraft from './create-draft/index.js';
-import sendEmail from './send-email/index.js';
+const createDraft = require('./create-draft/index.js');
+const sendEmail = require('./send-email/index.js');
 
-export default [createDraft, sendEmail];
+module.exports = [createDraft, sendEmail];

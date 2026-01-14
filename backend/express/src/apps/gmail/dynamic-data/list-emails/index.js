@@ -1,6 +1,6 @@
-import getCurrentUser from '../../common/get-current-user.js';
+const getCurrentUser = require('../../common/get-current-user.js');
 
-export default {
+module.exports = {
   name: 'List emails',
   key: 'listEmails',
 

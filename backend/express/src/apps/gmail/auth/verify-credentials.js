@@ -1,4 +1,4 @@
-import getCurrentUser from '../common/get-current-user.js';
+const getCurrentUser = require('../common/get-current-user.js');
 
 const verifyCredentials = async ($) => {
   const oauthRedirectUrlField = $.app.auth.fields.find(
@@ -38,4 +38,4 @@ const verifyCredentials = async ($) => {
   });
 };
 
-export default verifyCredentials;
+module.exports = verifyCredentials;

@@ -1,8 +1,8 @@
-import listEmails from './list-emails/index.js';
-import listLabels from './list-labels/index.js';
-import listSignatures from './list-signatures/index.js';
+const listEmails = require('./list-emails/index.js');
+const listLabels = require('./list-labels/index.js');
+const listSignatures = require('./list-signatures/index.js');
 
-export default [
+module.exports = [
   listEmails,
   listLabels,
   listSignatures,

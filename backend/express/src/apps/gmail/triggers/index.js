@@ -1,3 +1,3 @@
-import newEmails from './new-emails/index.js';
+const newEmails = require('./new-emails/index.js');
 
-export default [newEmails];
+module.exports = [newEmails];

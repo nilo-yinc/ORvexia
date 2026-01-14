@@ -1,6 +1,6 @@
-import defineAction from '../../../../helpers/define-action.js';
+const defineAction = require('../../../../helpers/define-action.js');
 
-export default defineAction({
+module.exports = defineAction({
   name: 'Send email',
   key: 'sendEmail',
   description: 'Send a new email message.',

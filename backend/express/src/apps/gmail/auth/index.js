@@ -1,9 +1,9 @@
-import generateAuthUrl from './generate-auth-url.js';
-import verifyCredentials from './verify-credentials.js';
-import refreshToken from './refresh-token.js';
-import isStillVerified from './is-still-verified.js';
+const generateAuthUrl = require('./generate-auth-url.js');
+const verifyCredentials = require('./verify-credentials.js');
+const refreshToken = require('./refresh-token.js');
+const isStillVerified = require('./is-still-verified.js');
 
-export default {
+module.exports = {
   fields: [
     {
       key: 'oAuthRedirectUrl',
