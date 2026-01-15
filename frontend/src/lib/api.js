@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api', // Proxy handles the rest
+  baseURL: import.meta.env.PROD 
+    ? 'https://orvexia-backend.vercel.app/api'
+    : '/api',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
