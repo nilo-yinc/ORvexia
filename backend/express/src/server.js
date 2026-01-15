@@ -16,7 +16,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "https://orvexia.vercel.app/", "https://orvexia.vercel.app"], 
+    origin: ["http://localhost:5173", "https://orvexia.vercel.app"], 
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -29,7 +29,7 @@ app.use(
     origin: ["http://localhost:5173", "https://orvexia.vercel.app"], 
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
-    methods: "GET, POST, PUT, DELETE",
+    methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
 app.use(cookieParser());
@@ -43,17 +43,11 @@ app.get('/', (req, res) => {
   res.send('Express Server Running');
 });
 
-app.use('/api/workflows',workflowRouter);
+app.use('/api/workflows', workflowRouter);
 app.use('/api/webhook', webhookRoutes);
-// app.use('/api/apps', appsRouter);
-
-// console.log('Apps Router Loaded', appsRouter);
-const port = process.env.PORT || 3000;
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
-
 app.use("/api/v1/users", userRoutes);
+
+const port = process.env.PORT || 3000;
 
 
 server.listen(port, () => {
