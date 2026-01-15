@@ -28,7 +28,7 @@ app.use(
   cors({
     origin: ["http://localhost:5173", "https://orvexia.vercel.app"], 
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
     exposedHeaders: ["Set-Cookie"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     preflightContinue: false,
