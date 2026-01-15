@@ -825,7 +825,7 @@ export const WorkflowBuilder = () => {
   };
 
   useEffect(() => {
-    const socket = io('http://localhost:3000'); 
+    const socket = io('http://localhost:3000' || 'https://orvexia-backend.vercel.app'); 
 
     socket.on('connect', () => {
         console.log('Connected to socket server');

@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target:  'https://orvexia-backend.vercel.app' || import.meta.env.VITE_API_URL,
         changeOrigin: true,
       },
     },
