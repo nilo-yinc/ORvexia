@@ -35,7 +35,10 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
       }
     } catch (error) {
-      // If 401 or other error, user is not logged in
+      // Don't log 401 errors - they're expected when not logged in
+      if (error.response?.status !== 401) {
+        console.error("Fetch user error:", error);
+      }
       setUser(null);
     } finally {
       setLoading(false);
