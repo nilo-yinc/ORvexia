@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
-const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://niloy:Niloy%402004@hacknitr.f87q2ts.mongodb.net/orvexia?appName=HackNITR';
+const mongoUri = process.env.MONGODB_URI;
+
+if (!mongoUri) {
+  console.error('❌ MONGODB_URI is not defined in environment variables');
+  process.exit(1);
+}
 
 mongoose.connect(mongoUri)
   .then(() => {
