@@ -700,9 +700,8 @@ const WorkflowCanvasInner = ({
               setShowBlockSelector(!showBlockSelector);
               setSearchQuery("");
             }}
-            className={`flex items-center gap-2 px-4 py-2 hover:bg-[#374151] text-white text-sm font-medium rounded-lg transition border border-[#374151] ${
-              showBlockSelector ? "bg-[#374151]" : "bg-[#1f2937]"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 hover:bg-[#374151] text-white text-sm font-medium rounded-lg transition border border-[#374151] ${showBlockSelector ? "bg-[#374151]" : "bg-[#1f2937]"
+              }`}
           >
             <Plus className="w-4 h-4" />
             Block
@@ -814,50 +813,50 @@ export const WorkflowBuilder = () => {
       return;
     }
     try {
-        await fetch(`/api/webhook/${triggerSlug}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ test: true }) 
-        });
+      await fetch(`/api/webhook/${triggerSlug}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ test: true })
+      });
     } catch (e) {
-        console.error("Run failed", e);
+      console.error("Run failed", e);
     }
   };
 
   useEffect(() => {
-    const socket = io('http://localhost:3000' || 'https://orvexia-backend.vercel.app'); 
+    const socket = io(import.meta.env.VITE_SOCKET_URL || 'https://orvexia-backend.vercel.app');
 
     socket.on('connect', () => {
-        console.log('Connected to socket server');
+      console.log('Connected to socket server');
     });
 
     socket.on('workflow_update', (data) => {
-        setNodes((nds) =>
-            nds.map((node) => {
-                if (node.id === data.nodeId) {
-                    let newStyle = { ...node.style };
-                    if (data.status === 'RUNNING') {
-                        newStyle.border = '2px solid #fbbf24'; 
-                        newStyle.boxShadow = '0 0 15px rgba(251, 191, 36, 0.6)';
-                        newStyle.transition = 'all 0.3s ease';
-                    } else if (data.status === 'SUCCESS') {
-                        newStyle.border = '2px solid #10b981'; 
-                        newStyle.boxShadow = '0 0 15px rgba(16, 185, 129, 0.6)';
-                        newStyle.transition = 'all 0.3s ease';
-                    } else if (data.status === 'FAILED') {
-                        newStyle.border = '2px solid #ef4444'; 
-                        newStyle.boxShadow = '0 0 15px rgba(239, 68, 68, 0.6)';
-                        newStyle.transition = 'all 0.3s ease';
-                    }
-                    return { ...node, style: newStyle };
-                }
-                return node;
-            })
-        );
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.id === data.nodeId) {
+            let newStyle = { ...node.style };
+            if (data.status === 'RUNNING') {
+              newStyle.border = '2px solid #fbbf24';
+              newStyle.boxShadow = '0 0 15px rgba(251, 191, 36, 0.6)';
+              newStyle.transition = 'all 0.3s ease';
+            } else if (data.status === 'SUCCESS') {
+              newStyle.border = '2px solid #10b981';
+              newStyle.boxShadow = '0 0 15px rgba(16, 185, 129, 0.6)';
+              newStyle.transition = 'all 0.3s ease';
+            } else if (data.status === 'FAILED') {
+              newStyle.border = '2px solid #ef4444';
+              newStyle.boxShadow = '0 0 15px rgba(239, 68, 68, 0.6)';
+              newStyle.transition = 'all 0.3s ease';
+            }
+            return { ...node, style: newStyle };
+          }
+          return node;
+        })
+      );
     });
 
     return () => {
-        socket.disconnect();
+      socket.disconnect();
     };
   }, [setNodes]);
 
@@ -1096,11 +1095,10 @@ export const WorkflowBuilder = () => {
         </div>
         <button
           onClick={() => setIsCopilotOpen(!isCopilotOpen)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition border ${
-            isCopilotOpen
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition border ${isCopilotOpen
               ? "bg-indigo-600/20 border-indigo-500/50 text-indigo-300"
               : "bg-[#1f2937] border-[#374151] text-gray-400"
-          }`}
+            }`}
         >
           <Sparkles className="w-4 h-4" />
           {isCopilotOpen ? "Copilot Active" : "Enable Copilot"}
@@ -1136,14 +1134,12 @@ export const WorkflowBuilder = () => {
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`flex gap-3 ${
-                      msg.role === "user" ? "flex-row-reverse" : ""
-                    }`}
+                    className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""
+                      }`}
                   >
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                        msg.role === "ai" ? "bg-indigo-600" : "bg-gray-700"
-                      }`}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === "ai" ? "bg-indigo-600" : "bg-gray-700"
+                        }`}
                     >
                       {msg.role === "ai" ? (
                         <Bot className="w-4 h-4 text-white" />
@@ -1152,11 +1148,10 @@ export const WorkflowBuilder = () => {
                       )}
                     </div>
                     <div
-                      className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
-                        msg.role === "ai"
+                      className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${msg.role === "ai"
                           ? "bg-[#1f2937] text-gray-200 rounded-tl-none"
                           : "bg-indigo-600 text-white rounded-tr-none"
-                      }`}
+                        }`}
                     >
                       {msg.text}
                     </div>

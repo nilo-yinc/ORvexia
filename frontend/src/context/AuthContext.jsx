@@ -5,9 +5,7 @@ const AuthContext = createContext();
 
 // Create axios instance
 const api = axios.create({
-  baseURL: import.meta.env.PROD 
-    ? 'https://orvexia-backend.vercel.app/api/v1/users'
-    : 'http://localhost:3000/api/v1/users',
+  baseURL: (import.meta.env.VITE_API_URL || 'https://orvexia-backend.vercel.app') + '/api/v1/users',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -50,7 +48,7 @@ export const AuthProvider = ({ children }) => {
     // Bypassed for now
     setUser(mockUser);
     setLoading(false);
-    
+
     /* Original fetch logic kept for future activation
     try {
       const response = await api.get('/get-profile');
@@ -121,7 +119,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     // Mock logout - for bypass we might just want to keep the session or just clear user
     setUser(null);
-    
+
     /* Original logout logic
     try {
       await api.post('/logout');
