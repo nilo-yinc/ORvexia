@@ -398,38 +398,27 @@ export const Landing = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="max-w-6xl mx-auto rounded-[4rem] bg-[#050505] p-12 md:p-28 text-center relative overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)] border border-white/5"
+          className="max-w-6xl mx-auto p-12 md:p-28 text-center relative"
         >
-          {/* Animated Mesh Gradient Background */}
-          <div className="absolute inset-0 z-0">
-            <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[150%] bg-indigo-600/30 rounded-full blur-[120px] animate-pulse" />
-            <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[150%] bg-orange-600/20 rounded-full blur-[120px]" />
-            <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 0)', backgroundSize: '16px 16px' }} />
-          </div>
-
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/50 text-[10px] font-black tracking-[0.3em] mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 text-[10px] font-black tracking-[0.3em] mb-10">
               LIMITED ENTERPRISE SLOTS AVAILABLE
             </div>
-            <h2 className="text-5xl md:text-8xl font-black text-white mb-12 tracking-tighter leading-[0.85]">
+            <h2 className="text-5xl md:text-8xl font-black text-gray-900 dark:text-white mb-12 tracking-tighter leading-[0.85]">
               Ready to <span className="bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent italic">ascend?</span>
             </h2>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <button
                 onClick={handleGetStarted}
-                className="px-14 py-7 bg-white text-black font-black text-xl rounded-2xl hover:bg-orange-500 hover:text-white transition-all shadow-2xl hover:scale-105 active:scale-95"
+                className="px-14 py-7 bg-orange-500 text-white font-black text-xl rounded-2xl hover:bg-orange-600 transition-all shadow-xl hover:scale-105 active:scale-95"
               >
                 Start Building Now
               </button>
-              <button className="px-12 py-6 bg-white/5 border border-white/10 text-white font-bold text-lg rounded-2xl hover:bg-white/10 transition-all backdrop-blur-xl">
+              <button className="px-12 py-6 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white font-bold text-lg rounded-2xl hover:bg-gray-200 dark:hover:bg-white/10 transition-all">
                 Contact Sales
               </button>
             </div>
           </div>
-
-          {/* Decorative Corner Ornaments */}
-          <div className="absolute bottom-10 left-10 p-4 border-l-2 border-b-2 border-white/10 w-24 h-24 pointer-events-none" />
-          <div className="absolute top-10 right-10 p-4 border-r-2 border-t-2 border-white/10 w-24 h-24 pointer-events-none" />
         </motion.div>
       </section>
 
