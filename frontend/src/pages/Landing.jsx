@@ -285,9 +285,6 @@ export const Landing = () => {
                   <p className="text-gray-500 dark:text-gray-400 font-medium text-sm leading-relaxed">
                     {feature.description}
                   </p>
-                  <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-20 transition-opacity">
-                    <IconComp className="w-24 h-24 text-orange-500 -mr-8 -mt-8" />
-                  </div>
                 </motion.div>
               );
             })}
