@@ -57,7 +57,7 @@ export const templates = [
     name: 'Lead Qualification',
     description: 'Score and qualify incoming leads automatically',
     category: 'Sales',
-    icon: '🎯',
+    icon: 'Target',
     uses: 1234,
   },
   {
@@ -65,7 +65,7 @@ export const templates = [
     name: 'Document Processing',
     description: 'Extract data from PDFs and documents',
     category: 'Operations',
-    icon: '📄',
+    icon: 'FileText',
     uses: 856,
   },
   {
@@ -73,7 +73,7 @@ export const templates = [
     name: 'Social Media Monitor',
     description: 'Track brand mentions across social platforms',
     category: 'Marketing',
-    icon: '📱',
+    icon: 'Smartphone',
     uses: 645,
   },
   {
@@ -81,7 +81,7 @@ export const templates = [
     name: 'Expense Approval',
     description: 'Automated expense report approval workflow',
     category: 'Finance',
-    icon: '💰',
+    icon: 'CreditCard',
     uses: 432,
   },
   {
@@ -89,7 +89,7 @@ export const templates = [
     name: 'Code Deployment',
     description: 'CI/CD pipeline with automated testing',
     category: 'DevOps',
-    icon: '🚀',
+    icon: 'Rocket',
     uses: 987,
   },
   {
@@ -97,7 +97,7 @@ export const templates = [
     name: 'Customer Feedback Analysis',
     description: 'Analyze and categorize customer feedback',
     category: 'Support',
-    icon: '💬',
+    icon: 'MessageSquare',
     uses: 765,
   },
 ];
@@ -188,32 +188,32 @@ export const testimonials = [
 
 export const features = [
   {
-    icon: '✨',
+    icon: 'Sparkles',
     title: 'Prompt → Workflow',
     description: 'Describe what you want in plain English, and watch AI generate production-ready workflows instantly.',
   },
   {
-    icon: '🎨',
+    icon: 'MousePointer2',
     title: 'Visual Builder',
     description: 'Drag-and-drop interface with real-time preview. No code required, infinite possibilities.',
   },
   {
-    icon: '🔄',
+    icon: 'Shield',
     title: 'Self-Healing',
     description: 'AI automatically detects and fixes errors in your workflows. Zero downtime, maximum reliability.',
   },
   {
-    icon: '🤖',
+    icon: 'Cpu',
     title: 'Agentic AI',
     description: 'Autonomous agents that adapt and learn from your workflows, making them smarter over time.',
   },
   {
-    icon: '📊',
+    icon: 'BarChart',
     title: 'Real-time Analytics',
     description: 'Deep insights into workflow performance with beautiful, actionable dashboards.',
   },
   {
-    icon: '🔌',
+    icon: 'Globe',
     title: 'Universal Integrations',
     description: 'Connect to 500+ apps and services. If it has an API, we can integrate it.',
   },

@@ -35,10 +35,23 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Mock user for bypass
+  const mockUser = {
+    id: 'mock-123',
+    name: 'Demo User',
+    email: 'demo@orvexia.com',
+    role: 'admin'
+  };
+
+  const [user, setUser] = useState(mockUser); // Default to mockUser
+  const [loading, setLoading] = useState(false); // No loading needed for bypass
 
   const fetchUser = async () => {
+    // Bypassed for now
+    setUser(mockUser);
+    setLoading(false);
+    
+    /* Original fetch logic kept for future activation
     try {
       const response = await api.get('/get-profile');
       if (response.data && response.data.status) {
@@ -47,16 +60,15 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
       }
     } catch (error) {
-      // Don't log 401 errors - they're expected when not logged in
       if (error.response?.status !== 401) {
         console.error("Fetch user error:", error);
       }
       setUser(null);
-      // Clear invalid token
       localStorage.removeItem('token');
     } finally {
       setLoading(false);
     }
+    */
   };
 
   // useEffect(() => {
@@ -64,10 +76,14 @@ export const AuthProvider = ({ children }) => {
   // }, []);
 
   const login = async (email, password) => {
+    // Mock login success
+    setUser(mockUser);
+    return { status: true, user: mockUser };
+
+    /* Original login logic
     try {
       const response = await api.post('/login', { email, password });
       if (response.data.status) {
-        // Store token if provided (fallback for cross-origin cookie issues)
         if (response.data.token) {
           localStorage.setItem('token', response.data.token);
         }
@@ -79,13 +95,18 @@ export const AuthProvider = ({ children }) => {
       console.error("Login error:", error);
       throw error.response?.data || error;
     }
+    */
   };
 
   const signup = async (name, email, password) => {
+    // Mock signup success
+    setUser(mockUser);
+    return { status: true, user: mockUser };
+
+    /* Original signup logic
     try {
       const response = await api.post('/register', { name, email, password });
       if (response.data.status) {
-        // Auto login after signup
         await login(email, password);
         return response.data;
       }
@@ -94,19 +115,24 @@ export const AuthProvider = ({ children }) => {
       console.error("Signup error:", error);
       throw error.response?.data || error;
     }
+    */
   };
 
   const logout = async () => {
+    // Mock logout - for bypass we might just want to keep the session or just clear user
+    setUser(null);
+    
+    /* Original logout logic
     try {
       await api.post('/logout');
       setUser(null);
       localStorage.removeItem('token');
     } catch (error) {
       console.error("Logout error:", error);
-      // Force logout on client even if server fails
       setUser(null);
       localStorage.removeItem('token');
     }
+    */
   };
 
   const value = {

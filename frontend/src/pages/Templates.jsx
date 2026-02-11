@@ -181,7 +181,7 @@ export const Templates = () => {
 
   const filteredTemplates = workflowTemplates.filter(template => {
     const matchesCategory = selectedCategory === 'All' || template.category === selectedCategory;
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       template.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       template.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -225,10 +225,9 @@ export const Templates = () => {
                 onClick={() => setSelectedCategory(category)}
                 className={`
                   px-4 py-2 rounded-lg text-sm font-medium transition-all
-                  ${
-                    selectedCategory === category
-                      ? 'bg-orange-500 text-white shadow-sm'
-                      : 'bg-white dark:bg-[#1a1a1a] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-[#2a2a2a] hover:border-orange-300 dark:hover:border-orange-700'
+                  ${selectedCategory === category
+                    ? 'bg-orange-500 text-white shadow-sm'
+                    : 'bg-white dark:bg-[#1a1a1a] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-[#2a2a2a] hover:border-orange-300 dark:hover:border-orange-700'
                   }
                 `}
               >
@@ -259,7 +258,7 @@ export const Templates = () => {
                     // Fallback to gradient if image fails to load
                     e.target.style.display = 'none';
                     e.target.parentElement.className = 'h-48 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/10 relative overflow-hidden flex items-center justify-center';
-                    e.target.parentElement.innerHTML = `<span class="text-6xl">${template.icon || '📋'}</span>`;
+                    e.target.parentElement.innerHTML = `<div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-orange-500"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>`;
                   }}
                 />
                 <div className="absolute top-3 right-3">

@@ -16,6 +16,10 @@ import { AppLayout } from './layouts/AppLayout';
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
+  // Bypassed for now: Always render children
+  return children;
+
+  /* Original ProtectedRoute logic
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -25,16 +29,23 @@ const ProtectedRoute = ({ children }) => {
   }
 
   return isAuthenticated ? children : <Navigate to="/login" />;
+  */
 };
 
 const PublicRoute = ({ children, allowAuthenticated = false }) => {
   const { isAuthenticated } = useAuth();
+
+  // Bypassed for now: Always render children
+  return children;
+
+  /* Original PublicRoute logic
   // If allowAuthenticated is true, show the page even if authenticated
   // Otherwise, redirect authenticated users to home
   if (!allowAuthenticated && isAuthenticated) {
     return <Navigate to="/home" />;
   }
   return children;
+  */
 };
 
 function App() {
@@ -61,7 +72,7 @@ function App() {
                 </PublicRoute>
               }
             />
-            
+
             {/* Protected routes - require authentication */}
             <Route
               element={
